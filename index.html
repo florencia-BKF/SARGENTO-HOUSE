@@ -544,6 +544,15 @@ function processExcel(file){
         setStep(stepsDiv,6,'loading');
         D={months:newMonths,years:newYears,expense_types:expTypes,expense_detail:newDetail,partners,yoy:D.yoy,avg_expenses:Math.round(avgExpenses*100)/100,breakeven:{avg_fixed:Math.round(avgFixed*100)/100,avg_variable:Math.round(avgVar*100)/100,var_ratio:Math.round(varRatio*10000)/10000,monthly_breakeven:Math.round(be*100)/100,fixed_types:fixTypes,variable_types:varTypes}};
 
+        // Guardar en localStorage para persistir
+        try{
+          localStorage.setItem('sargento_D', JSON.stringify(D));
+          localStorage.setItem('sargento_updated', new Date().toISOString());
+          console.log('[localStorage] Datos guardados correctamente');
+        } catch(e){
+          console.warn('No se pudo guardar en localStorage:', e);
+        }
+
         // Refresh all panels
         rs();rm();ry();rd();ri();
         // Reset YoY selector
@@ -578,6 +587,24 @@ function processExcel(file){
 
 // INIT
 (function(){
+  // Restaurar datos desde localStorage si existen
+  try{
+    let saved=localStorage.getItem('sargento_D');
+    if(saved){
+      let parsed=JSON.parse(saved);
+      if(parsed&&parsed.months&&parsed.months.length>0){
+        D=parsed;
+        let savedDate=localStorage.getItem('sargento_updated');
+        let updStr=savedDate?new Date(savedDate).toLocaleString('es-AR'):'?';
+        console.log('[localStorage] Datos restaurados:', D.months.length, 'meses');
+        console.log('[localStorage] Última actualización:', updStr);
+      }
+    }
+  }catch(e){
+    console.warn('No se pudo restaurar localStorage:', e);
+    try{ localStorage.removeItem('sargento_D'); localStorage.removeItem('sargento_updated'); }catch(e2){}
+  }
+
   buildTabs();
   let yrs=[...new Set(D.months.map(m=>m.year))].sort();
   let s=document.getElementById("yf");yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text=y;s.add(o)});
