@@ -522,15 +522,6 @@ function processExcel(file){
         setStep(stepsDiv,6,'loading');
         D={months:newMonths,years:newYears,expense_types:expTypes,expense_detail:newDetail,partners,yoy:D.yoy,avg_expenses:Math.round(avgExpenses*100)/100,breakeven:{avg_fixed:Math.round(avgFixed*100)/100,avg_variable:Math.round(avgVar*100)/100,var_ratio:Math.round(varRatio*10000)/10000,monthly_breakeven:Math.round(be*100)/100,fixed_types:fixTypes,variable_types:varTypes}};
 
-        // Guardar en localStorage para persistir
-        try{
-          localStorage.setItem('sargento_D', JSON.stringify(D));
-          localStorage.setItem('sargento_updated', new Date().toISOString());
-          console.log('[localStorage] Datos guardados correctamente');
-        } catch(e){
-          console.warn('No se pudo guardar en localStorage:', e);
-        }
-
         // Refresh all panels
         rs();rm();ry();rd();ri();
         // Reset YoY selector
@@ -544,7 +535,18 @@ function processExcel(file){
 
         // Update date badge
         let now=new Date();let months2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-        document.getElementById('lastUpdate').textContent='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+        let dateDisplay='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+        document.getElementById('lastUpdate').textContent=dateDisplay;
+
+        // Guardar en localStorage para persistir (incluyendo la fecha de actualización)
+        try{
+          localStorage.setItem('sargento_D', JSON.stringify(D));
+          localStorage.setItem('sargento_updated', new Date().toISOString());
+          localStorage.setItem('sargento_date_display', dateDisplay);
+          console.log('[localStorage] Datos guardados correctamente con fecha: '+dateDisplay);
+        } catch(e){
+          console.warn('No se pudo guardar en localStorage:', e);
+        }
 
         setStep(stepsDiv,6,'done');progress.style.width='100%';
 
@@ -574,14 +576,20 @@ function processExcel(file){
       if(parsed&&parsed.months&&parsed.months.length>0){
         D=parsed;
         let savedDate=localStorage.getItem('sargento_updated');
+        let dateDisplay=localStorage.getItem('sargento_date_display');
         let updStr=savedDate?new Date(savedDate).toLocaleString('es-AR'):'?';
         console.log('[localStorage] Datos restaurados:', D.months.length, 'meses');
         console.log('[localStorage] Última actualización:', updStr);
+        // Restaurar la fecha de actualización en la UI
+        if(dateDisplay){
+          document.getElementById('lastUpdate').textContent=dateDisplay;
+          console.log('[localStorage] Fecha restaurada:', dateDisplay);
+        }
       }
     }
   }catch(e){
     console.warn('No se pudo restaurar localStorage:', e);
-    try{ localStorage.removeItem('sargento_D'); localStorage.removeItem('sargento_updated'); }catch(e2){}
+    try{ localStorage.removeItem('sargento_D'); localStorage.removeItem('sargento_updated'); localStorage.removeItem('sargento_date_display'); }catch(e2){}
   }
 
   buildTabs();
