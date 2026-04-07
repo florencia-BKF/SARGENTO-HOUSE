@@ -535,10 +535,10 @@ function processExcel(file){
         // Update title with date range
         updateDateRange();
 
-        // Update date badge
+        // Update date badge (temporal - será reemplazado por Firebase)
         let now=new Date();let months2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-        let dateDisplay='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
-        document.getElementById('lastUpdate').textContent=dateDisplay;
+        let dateDisplayTemp='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+        document.getElementById('lastUpdate').textContent=dateDisplayTemp;
 
         // Guardar en localStorage para persistir (incluyendo la fecha de actualización)
         try{
