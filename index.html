@@ -590,6 +590,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
+console.log('[Firebase] Inicializado correctamente:', db.ref().toString());
 
 async function readDataJSON(){
   try{
@@ -643,7 +644,9 @@ async function updateDataJSON(dataToSave){
   }
 
   // Cargar datos desde Firebase y escuchar cambios en tiempo real
+  console.log('[Firebase] Iniciando listener de datos...');
   db.ref('data').on('value',snapshot=>{
+    console.log('[Firebase] Listener disparado, datos recibidos:', snapshot.val());
     let firebaseData=snapshot.val();
     if(firebaseData&&firebaseData.months&&firebaseData.months.length>0){
       D=firebaseData;
