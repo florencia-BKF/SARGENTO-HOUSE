@@ -115,7 +115,7 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:14px;background:#f0f2f5;co
 <body>
 <div class="header">
 <h1>Unidad de Negocio Sargento Cabral</h1>
-<h2>Estado de Resultados en USD &mdash; Abril 2023 a Marzo 2026</h2>
+<h2 id="dateRange">Estado de Resultados en USD &mdash; Abril 2023 a Marzo 2026</h2>
 <div class="badge" id="lastUpdate">Actualizado: 01/04/2026</div>
 </div>
 <div class="container">
@@ -153,15 +153,6 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:14px;background:#f0f2f5;co
   <div class="chart-container" style="margin-top:20px"><canvas id="chartYoY"></canvas></div>
 </div>
 
-<div class="panel" id="p-be">
-  <div class="section-title">An&aacute;lisis de Punto de Equilibrio (Break-Even)</div>
-  <div class="kpi-grid" id="beKpis"></div>
-  <div class="charts-grid">
-    <div class="chart-container"><canvas id="chartBE"></canvas></div>
-    <div class="chart-container"><canvas id="chartBE2"></canvas></div>
-  </div>
-</div>
-
 <div class="panel" id="p-up">
   <div class="section-title">Actualizar informe desde Excel</div>
   <div class="upload-zone" id="dropZone">
@@ -195,7 +186,6 @@ const tabDefs=[
   {id:'d',label:'Distribuci\u00f3n'},
   {id:'i',label:'Incidencia'},
   {id:'yoy',label:'Comparativo YoY'},
-  {id:'be',label:'Break-Even'},
   {id:'up',label:'Actualizar Excel'}
 ];
 
@@ -326,26 +316,14 @@ function ryoy(){
   yoyChart=new Chart(document.getElementById('chartYoY'),{type:'bar',data:{labels:mn12.map(mn=>MN[mn]),datasets:[{label:'Ingresos '+y1,data:mn12.map(mn=>{let a=ms1.find(m=>m.month_num===mn);return a?a.ingresos:null}),backgroundColor:'rgba(66,165,245,.65)'},{label:'Ingresos '+y2,data:mn12.map(mn=>{let b=ms2.find(m=>m.month_num===mn);return b?b.ingresos:null}),backgroundColor:'rgba(76,175,80,.65)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Ingresos '+y1+' vs '+y2,font:{size:14}}}}});
 }
 
-function rbe(){
-  let b=D.breakeven,below=D.months.filter(m=>m.ingresos<b.monthly_breakeven).length;
-  document.getElementById('beKpis').innerHTML=
-    '<div class="kpi-box ok"><h4>Costos Fijos Promedio / Mes</h4><div class="kpi-val">'+U(b.avg_fixed)+'</div><div class="kpi-sub">'+b.fixed_types.join(' &middot; ')+'</div></div>'+
-    '<div class="kpi-box warn"><h4>Costos Variables Promedio / Mes</h4><div class="kpi-val">'+U(b.avg_variable)+'</div><div class="kpi-sub">'+b.variable_types.join(' &middot; ')+' &middot; Agust\u00edn 20% &mdash; ratio '+(b.var_ratio*100).toFixed(1)+'%</div></div>'+
-    '<div class="kpi-box"><h4>Punto de Equilibrio Mensual</h4><div class="kpi-val">'+U(b.monthly_breakeven)+'</div><div class="kpi-sub">Ingreso m\u00ednimo para no perder</div></div>'+
-    '<div class="kpi-box '+(below>4?'bad':'warn')+'"><h4>Meses bajo Break-Even</h4><div class="kpi-val">'+below+' de '+D.months.length+'</div><div class="kpi-sub">'+(below/D.months.length*100).toFixed(0)+'% de los per\u00edodos</div></div>';
-
-  let labels=D.months.map(m=>PL(m.period));
-  new Chart(document.getElementById('chartBE'),{type:'line',data:{labels,datasets:[
-    {label:'Ingresos',data:D.months.map(m=>m.ingresos),borderColor:'#4caf50',backgroundColor:'rgba(76,175,80,.1)',fill:true,tension:.3},
-    {label:'Break-Even',data:D.months.map(()=>b.monthly_breakeven),borderColor:'#ff9800',borderDash:[6,4],pointRadius:0,fill:false},
-    {label:'Costos Fijos',data:D.months.map(()=>b.avg_fixed),borderColor:'#ef5350',borderDash:[3,3],pointRadius:0,fill:false}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Ingresos vs Punto de Equilibrio',font:{size:14}}}}});
-
-  let avgAgu=D.months.reduce((s,m)=>s+m.agustin,0)/D.months.length;
-  new Chart(document.getElementById('chartBE2'),{type:'doughnut',data:{
-    labels:['Costos Fijos','Costos Variables','Agust\u00edn (20%)'],
-    datasets:[{data:[b.avg_fixed,b.avg_variable,avgAgu],backgroundColor:['#ef5350','#ff9800','#42a5f5']}]
-  },options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Estructura de Costos Promedio',font:{size:14}}}}});
+function updateDateRange(){
+  if(!D.months || D.months.length===0) return;
+  let sorted=[...D.months].sort((a,b)=>new Date(a.period)-new Date(b.period));
+  let first=sorted[0],last=sorted[sorted.length-1];
+  let [y1,m1]=first.period.split('-'),months=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  let [y2,m2]=last.period.split('-');
+  let text='Estado de Resultados en USD &mdash; '+months[parseInt(m1)]+' '+y1+' a '+months[parseInt(m2)]+' '+y2;
+  document.getElementById('dateRange').textContent=text;
 }
 
 // =====================
@@ -560,8 +538,9 @@ function processExcel(file){
         let yrList=[...new Set(D.months.map(m=>m.year))].sort();
         for(let i=0;i<yrList.length-1;i++){let o=document.createElement('option');o.value=yrList[i]+'-'+yrList[i+1];o.text=yrList[i]+' vs '+yrList[i+1];ys.add(o)}
         Chart.getChart('chartYoY')?.destroy();yoyChart=null;ryoy();
-        // Destroy and rebuild BE charts
-        Chart.getChart('chartBE')?.destroy();Chart.getChart('chartBE2')?.destroy();rbe();
+
+        // Update title with date range
+        updateDateRange();
 
         // Update date badge
         let now=new Date();let months2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -613,7 +592,7 @@ function processExcel(file){
   D.months.forEach(m=>{let o=document.createElement("option");o.value=m.period;o.text=PL(m.period);is.add(o)});
   let ys=document.getElementById('yoysel');
   for(let i=0;i<yrs.length-1;i++){let o=document.createElement('option');o.value=yrs[i]+'-'+yrs[i+1];o.text=yrs[i]+' vs '+yrs[i+1];ys.add(o)}
-  rs();rm();ry();rd();ri();ryoy();rbe();setupUpload();
+  rs();rm();ry();rd();ri();ryoy();updateDateRange();setupUpload();
 })();
 </script>
 </body>
