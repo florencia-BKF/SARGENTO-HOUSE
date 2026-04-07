@@ -322,7 +322,7 @@ function updateDateRange(){
   let first=sorted[0],last=sorted[sorted.length-1];
   let [y1,m1]=first.period.split('-'),months=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   let [y2,m2]=last.period.split('-');
-  let text='Estado de Resultados en USD &mdash; '+months[parseInt(m1)]+' '+y1+' a '+months[parseInt(m2)]+' '+y2;
+  let text='Estado de Resultados en USD — '+months[parseInt(m1)]+' '+y1+' a '+months[parseInt(m2)]+' '+y2;
   document.getElementById('dateRange').textContent=text;
 }
 
