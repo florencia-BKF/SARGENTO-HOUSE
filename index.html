@@ -6,6 +6,8 @@
 <title>Estado de Resultados - Sargento Cabral</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Arial,Helvetica,sans-serif;font-size:14px;background:#f0f2f5;color:#333}
@@ -548,6 +550,13 @@ function processExcel(file){
           console.warn('No se pudo guardar en localStorage:', e);
         }
 
+        // Actualizar data.json en GitHub
+        updateDataJSON(dateDisplay).then(success=>{
+          if(success){
+            console.log('[GitHub] Fecha compartida actualizada para todos');
+          }
+        });
+
         setStep(stepsDiv,6,'done');progress.style.width='100%';
 
         let totalIng=D.months.reduce((s,m)=>s+m.ingresos,0);
@@ -564,6 +573,47 @@ function processExcel(file){
     };
     reader.readAsArrayBuffer(file);
   },100);
+}
+
+// =====================
+// FIREBASE - Lectura y actualización en tiempo real
+// =====================
+const firebaseConfig = {
+  apiKey: "AIzaSyDN1aCa6tXUt8WIX47JrK5B0_jLYfk5P4E",
+  authDomain: "sargento-house.firebaseapp.com",
+  databaseURL: "https://sargento-house-default-rtdb.firebaseio.com",
+  projectId: "sargento-house",
+  storageBucket: "sargento-house.firebasestorage.app",
+  messagingSenderId: "639984904932",
+  appId: "1:639984904932:web:9f9e58ce64c8104306 1af1"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+async function readDataJSON(){
+  try{
+    let snapshot=await db.ref('lastUpdate').once('value');
+    let data=snapshot.val();
+    if(data){
+      console.log('[Firebase] Fecha leída:', data);
+      return {lastUpdate:data};
+    }
+  }catch(e){
+    console.warn('[Firebase] Error al leer datos:', e);
+  }
+  return null;
+}
+
+async function updateDataJSON(dateDisplay){
+  try{
+    await db.ref('lastUpdate').set(dateDisplay);
+    console.log('[Firebase] Fecha actualizada:', dateDisplay);
+    return true;
+  }catch(e){
+    console.warn('[Firebase] Error al actualizar:', e);
+  }
+  return false;
 }
 
 // INIT
@@ -591,6 +641,14 @@ function processExcel(file){
     console.warn('No se pudo restaurar localStorage:', e);
     try{ localStorage.removeItem('sargento_D'); localStorage.removeItem('sargento_updated'); localStorage.removeItem('sargento_date_display'); }catch(e2){}
   }
+
+  // Cargar fecha desde data.json (GitHub) para mostrar a todos igual
+  readDataJSON().then(data=>{
+    if(data&&data.lastUpdate){
+      document.getElementById('lastUpdate').textContent=data.lastUpdate;
+      console.log('[GitHub] Fecha desde data.json:', data.lastUpdate);
+    }
+  });
 
   buildTabs();
   let yrs=[...new Set(D.months.map(m=>m.year))].sort();
