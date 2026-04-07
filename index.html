@@ -550,10 +550,13 @@ function processExcel(file){
           console.warn('No se pudo guardar en localStorage:', e);
         }
 
-        // Guardar todos los datos en Firebase para sincronizar con todos
+        // Guardar todos los datos + fecha en Firebase para sincronizar con todos
+        let now=new Date();
+        let dateDisplay='Actualizado: '+now.getDate()+'/'+(now.getMonth()+1).toString().padStart(2,'0')+'/'+now.getFullYear();
+        D.lastUpdateDate=dateDisplay;
         updateDataJSON(D).then(success=>{
           if(success){
-            console.log('[Firebase] Datos compartidos actualizados para todos');
+            console.log('[Firebase] Datos compartidos actualizados para todos con fecha:', dateDisplay);
           }
         });
 
@@ -619,61 +622,54 @@ async function updateDataJSON(dataToSave){
 
 // INIT
 (function(){
-  // Restaurar datos desde localStorage si existen
-  try{
-    let saved=localStorage.getItem('sargento_D');
-    if(saved){
-      let parsed=JSON.parse(saved);
-      if(parsed&&parsed.months&&parsed.months.length>0){
-        D=parsed;
-        let savedDate=localStorage.getItem('sargento_updated');
-        let dateDisplay=localStorage.getItem('sargento_date_display');
-        let updStr=savedDate?new Date(savedDate).toLocaleString('es-AR'):'?';
-        console.log('[localStorage] Datos restaurados:', D.months.length, 'meses');
-        console.log('[localStorage] Última actualización:', updStr);
-        // Restaurar la fecha de actualización en la UI
-        if(dateDisplay){
-          document.getElementById('lastUpdate').textContent=dateDisplay;
-          console.log('[localStorage] Fecha restaurada:', dateDisplay);
-        }
-      }
-    }
-  }catch(e){
-    console.warn('No se pudo restaurar localStorage:', e);
-    try{ localStorage.removeItem('sargento_D'); localStorage.removeItem('sargento_updated'); localStorage.removeItem('sargento_date_display'); }catch(e2){}
-  }
-
-  // Cargar datos desde Firebase y escuchar cambios en tiempo real
+  // Cargar datos desde Firebase y escuchar cambios en tiempo real (PRIORIDAD)
   console.log('[Firebase] Iniciando listener de datos...');
+  let firebaseDataLoaded=false;
   db.ref('data').on('value',snapshot=>{
     console.log('[Firebase] Listener disparado, datos recibidos:', snapshot.val());
     let firebaseData=snapshot.val();
     if(firebaseData&&firebaseData.months&&firebaseData.months.length>0){
       D=firebaseData;
+      firebaseDataLoaded=true;
       console.log('[Firebase] Datos actualizados en tiempo real:', D.months.length, 'meses');
       // Re-renderizar todo para mostrar los nuevos datos
       rs();rm();ry();rd();ri();ryoy();updateDateRange();
-      // Actualizar fecha
-      if(D.months.length>0){
-        let sorted=[...D.months].sort((a,b)=>new Date(a.period)-new Date(b.period));
-        let last=sorted[sorted.length-1];
-        let months=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-        let [y,m]=last.period.split('-');
-        let dateDisplay='Actualizado: '+new Date().getDate()+'/'+(parseInt(m)).toString().padStart(2,'0')+'/'+y;
-        document.getElementById('lastUpdate').textContent=dateDisplay;
+      // Actualizar fecha desde los datos guardados
+      if(D.lastUpdateDate){
+        document.getElementById('lastUpdate').textContent=D.lastUpdateDate;
+        console.log('[Firebase] Fecha mostrada:', D.lastUpdateDate);
+      }
+    }else if(!firebaseDataLoaded){
+      // Si Firebase está vacío, intentar cargar desde localStorage
+      console.log('[Firebase] Sin datos en Firebase, intentando localStorage...');
+      try{
+        let saved=localStorage.getItem('sargento_D');
+        if(saved){
+          let parsed=JSON.parse(saved);
+          if(parsed&&parsed.months&&parsed.months.length>0){
+            D=parsed;
+            console.log('[localStorage] Datos restaurados:', D.months.length, 'meses');
+            firebaseDataLoaded=true;
+          }
+        }
+      }catch(e){
+        console.warn('No se pudo restaurar localStorage:', e);
       }
     }
   });
 
-  buildTabs();
+  // Esperar un poco para que Firebase cargue antes de renderizar
+  setTimeout(()=>{
+    buildTabs();
   let yrs=[...new Set(D.months.map(m=>m.year))].sort();
-  let s=document.getElementById("yf");yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text=y;s.add(o)});
-  let is=document.getElementById("ip");
-  yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text="A\u00f1o "+y;is.add(o)});
-  D.months.forEach(m=>{let o=document.createElement("option");o.value=m.period;o.text=PL(m.period);is.add(o)});
-  let ys=document.getElementById('yoysel');
-  for(let i=0;i<yrs.length-1;i++){let o=document.createElement('option');o.value=yrs[i]+'-'+yrs[i+1];o.text=yrs[i]+' vs '+yrs[i+1];ys.add(o)}
-  rs();rm();ry();rd();ri();ryoy();updateDateRange();setupUpload();
+    let s=document.getElementById("yf");yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text=y;s.add(o)});
+    let is=document.getElementById("ip");
+    yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text="A\u00f1o "+y;is.add(o)});
+    D.months.forEach(m=>{let o=document.createElement("option");o.value=m.period;o.text=PL(m.period);is.add(o)});
+    let ys=document.getElementById('yoysel');
+    for(let i=0;i<yrs.length-1;i++){let o=document.createElement('option');o.value=yrs[i]+'-'+yrs[i+1];o.text=yrs[i]+' vs '+yrs[i+1];ys.add(o)}
+    rs();rm();ry();rd();ri();ryoy();updateDateRange();setupUpload();
+  }, 1000);
 })();
 </script>
 </body>
