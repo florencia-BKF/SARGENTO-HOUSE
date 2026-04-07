@@ -540,16 +540,6 @@ function processExcel(file){
         let dateDisplayTemp='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
         document.getElementById('lastUpdate').textContent=dateDisplayTemp;
 
-        // Guardar en localStorage para persistir (incluyendo la fecha de actualización)
-        try{
-          localStorage.setItem('sargento_D', JSON.stringify(D));
-          localStorage.setItem('sargento_updated', new Date().toISOString());
-          localStorage.setItem('sargento_date_display', dateDisplay);
-          console.log('[localStorage] Datos guardados correctamente con fecha: '+dateDisplay);
-        } catch(e){
-          console.warn('No se pudo guardar en localStorage:', e);
-        }
-
         // Guardar todos los datos + fecha en Firebase para sincronizar con todos
         let currentDate=new Date();
         let dateDisplay='Actualizado: '+currentDate.getDate()+'/'+(currentDate.getMonth()+1).toString().padStart(2,'0')+'/'+currentDate.getFullYear();
@@ -640,21 +630,9 @@ async function updateDataJSON(dataToSave){
         console.log('[Firebase] Fecha mostrada:', D.lastUpdateDate);
       }
     }else if(!firebaseDataLoaded){
-      // Si Firebase está vacío, intentar cargar desde localStorage
-      console.log('[Firebase] Sin datos en Firebase, intentando localStorage...');
-      try{
-        let saved=localStorage.getItem('sargento_D');
-        if(saved){
-          let parsed=JSON.parse(saved);
-          if(parsed&&parsed.months&&parsed.months.length>0){
-            D=parsed;
-            console.log('[localStorage] Datos restaurados:', D.months.length, 'meses');
-            firebaseDataLoaded=true;
-          }
-        }
-      }catch(e){
-        console.warn('No se pudo restaurar localStorage:', e);
-      }
+      // Si Firebase está vacío, usar los datos iniciales del HTML
+      console.log('[Firebase] Sin datos en Firebase, usando datos iniciales');
+      firebaseDataLoaded=true;
     }
   });
 
