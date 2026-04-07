@@ -550,10 +550,10 @@ function processExcel(file){
           console.warn('No se pudo guardar en localStorage:', e);
         }
 
-        // Actualizar data.json en GitHub
-        updateDataJSON(dateDisplay).then(success=>{
+        // Guardar todos los datos en Firebase para sincronizar con todos
+        updateDataJSON(D).then(success=>{
           if(success){
-            console.log('[GitHub] Fecha compartida actualizada para todos');
+            console.log('[Firebase] Datos compartidos actualizados para todos');
           }
         });
 
@@ -593,11 +593,11 @@ const db=firebase.database();
 
 async function readDataJSON(){
   try{
-    let snapshot=await db.ref('lastUpdate').once('value');
+    let snapshot=await db.ref('data').once('value');
     let data=snapshot.val();
-    if(data){
-      console.log('[Firebase] Fecha leída:', data);
-      return {lastUpdate:data};
+    if(data&&data.months&&data.months.length>0){
+      console.log('[Firebase] Datos leídos:', data.months.length, 'meses');
+      return data;
     }
   }catch(e){
     console.warn('[Firebase] Error al leer datos:', e);
@@ -605,10 +605,10 @@ async function readDataJSON(){
   return null;
 }
 
-async function updateDataJSON(dateDisplay){
+async function updateDataJSON(dataToSave){
   try{
-    await db.ref('lastUpdate').set(dateDisplay);
-    console.log('[Firebase] Fecha actualizada:', dateDisplay);
+    await db.ref('data').set(dataToSave);
+    console.log('[Firebase] Datos actualizados en tiempo real');
     return true;
   }catch(e){
     console.warn('[Firebase] Error al actualizar:', e);
@@ -642,11 +642,23 @@ async function updateDataJSON(dateDisplay){
     try{ localStorage.removeItem('sargento_D'); localStorage.removeItem('sargento_updated'); localStorage.removeItem('sargento_date_display'); }catch(e2){}
   }
 
-  // Cargar fecha desde data.json (GitHub) para mostrar a todos igual
-  readDataJSON().then(data=>{
-    if(data&&data.lastUpdate){
-      document.getElementById('lastUpdate').textContent=data.lastUpdate;
-      console.log('[GitHub] Fecha desde data.json:', data.lastUpdate);
+  // Cargar datos desde Firebase y escuchar cambios en tiempo real
+  db.ref('data').on('value',snapshot=>{
+    let firebaseData=snapshot.val();
+    if(firebaseData&&firebaseData.months&&firebaseData.months.length>0){
+      D=firebaseData;
+      console.log('[Firebase] Datos actualizados en tiempo real:', D.months.length, 'meses');
+      // Re-renderizar todo para mostrar los nuevos datos
+      rs();rm();ry();rd();ri();ryoy();updateDateRange();
+      // Actualizar fecha
+      if(D.months.length>0){
+        let sorted=[...D.months].sort((a,b)=>new Date(a.period)-new Date(b.period));
+        let last=sorted[sorted.length-1];
+        let months=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        let [y,m]=last.period.split('-');
+        let dateDisplay='Actualizado: '+new Date().getDate()+'/'+(parseInt(m)).toString().padStart(2,'0')+'/'+y;
+        document.getElementById('lastUpdate').textContent=dateDisplay;
+      }
     }
   });
 
