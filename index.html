@@ -551,8 +551,8 @@ function processExcel(file){
         }
 
         // Guardar todos los datos + fecha en Firebase para sincronizar con todos
-        let now=new Date();
-        let dateDisplay='Actualizado: '+now.getDate()+'/'+(now.getMonth()+1).toString().padStart(2,'0')+'/'+now.getFullYear();
+        let currentDate=new Date();
+        let dateDisplay='Actualizado: '+currentDate.getDate()+'/'+(currentDate.getMonth()+1).toString().padStart(2,'0')+'/'+currentDate.getFullYear();
         D.lastUpdateDate=dateDisplay;
         updateDataJSON(D).then(success=>{
           if(success){
