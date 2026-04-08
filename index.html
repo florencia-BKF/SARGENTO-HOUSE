@@ -636,18 +636,17 @@ async function updateDataJSON(dataToSave){
     }
   });
 
-  // Esperar un poco para que Firebase cargue antes de renderizar
-  setTimeout(()=>{
-    buildTabs();
+  // Renderizar datos iniciales INMEDIATAMENTE (sin esperar a Firebase)
+  buildTabs();
   let yrs=[...new Set(D.months.map(m=>m.year))].sort();
-    let s=document.getElementById("yf");yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text=y;s.add(o)});
-    let is=document.getElementById("ip");
-    yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text="A\u00f1o "+y;is.add(o)});
-    D.months.forEach(m=>{let o=document.createElement("option");o.value=m.period;o.text=PL(m.period);is.add(o)});
-    let ys=document.getElementById('yoysel');
-    for(let i=0;i<yrs.length-1;i++){let o=document.createElement('option');o.value=yrs[i]+'-'+yrs[i+1];o.text=yrs[i]+' vs '+yrs[i+1];ys.add(o)}
-    rs();rm();ry();rd();ri();ryoy();updateDateRange();setupUpload();
-  }, 1000);
+  let s=document.getElementById("yf");yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text=y;s.add(o)});
+  let is=document.getElementById("ip");
+  yrs.forEach(y=>{let o=document.createElement("option");o.value=y;o.text="A\u00f1o "+y;is.add(o)});
+  D.months.forEach(m=>{let o=document.createElement("option");o.value=m.period;o.text=PL(m.period);is.add(o)});
+  let ys=document.getElementById('yoysel');
+  for(let i=0;i<yrs.length-1;i++){let o=document.createElement('option');o.value=yrs[i]+'-'+yrs[i+1];o.text=yrs[i]+' vs '+yrs[i+1];ys.add(o)}
+  rs();rm();ry();rd();ri();ryoy();updateDateRange();setupUpload();
+  console.log('[Init] Datos iniciales renderizados inmediatamente');
 })();
 </script>
 </body>
