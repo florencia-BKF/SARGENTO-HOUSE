@@ -229,7 +229,6 @@ const tabDefs=[
   {id:'d',label:'Distribuci\u00f3n'},
   {id:'i',label:'Incidencia'},
   {id:'yoy',label:'Comparativo YoY'},
-  {id:'be',label:'Break-Even'},
   {id:'up',label:'Actualizar Excel'}
 ];
 
@@ -360,17 +359,6 @@ function ryoy(){
   yoyChart=new Chart(document.getElementById('chartYoY'),{type:'bar',data:{labels:mn12.map(mn=>MN[mn]),datasets:[{label:'Ingresos '+y1,data:mn12.map(mn=>{let a=ms1.find(m=>m.month_num===mn);return a?a.ingresos:null}),backgroundColor:'rgba(66,165,245,.65)'},{label:'Ingresos '+y2,data:mn12.map(mn=>{let b=ms2.find(m=>m.month_num===mn);return b?b.ingresos:null}),backgroundColor:'rgba(76,175,80,.65)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Ingresos '+y1+' vs '+y2,font:{size:14}}}}});
 }
 
-,
-    {label:data:D.months.map(()=>b.monthly_breakeven),borderColor:'#ff9800',borderDash:[6,4],pointRadius:0,fill:false},
-    {label:'Costos Fijos',data:D.months.map(()=>b.avg_fixed),borderColor:'#ef5350',borderDash:[3,3],pointRadius:0,fill:false}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Ingresos vs Punto de Equilibrio',font:{size:14}}}}});
-
-  let avgAgu=D.months.reduce((s,m)=>s+m.agustin,0)/D.months.length;
-    labels:['Costos Fijos','Costos Variables','Agust\u00edn (20%)'],
-    datasets:[{data:[b.avg_fixed,b.avg_variable,avgAgu],backgroundColor:['#ef5350','#ff9800','#42a5f5']}]
-  },options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Estructura de Costos Promedio',font:{size:14}}}}});
-}
-
 // =====================
 // ACTUALIZAR DESDE EXCEL — procesa y reconstruye todo el informe
 // =====================
@@ -426,7 +414,6 @@ function processExcel(file){
     'Procesando ingresos',
     'Calculando estado de resultados',
     'Actualizando distribuci\u00f3n y acumulados',
-    'Calculando Break-Even',
     'Actualizando informe'
   ];
   stepsDiv.innerHTML=stepsList.map((s,i)=>'<div class="step"><div class="step-icon pending" id="step-'+i+'"></div>'+s+'</div>').join('');
@@ -552,37 +539,34 @@ function processExcel(file){
         let avgIng=newMonths.reduce((s,m)=>s+m.ingresos,0)/newMonths.length;
         setStep(stepsDiv,4,'done');progress.style.width='78%';
 
-        // --- BREAK-EVEN ---
-        setStep(stepsDiv,5,'loading');
-        let varTypes=expTypes.filter(t=>!FIXED_TYPES_BE.includes(t));
-        let fixTypes=expTypes.filter(t=>FIXED_TYPES_BE.includes(t));
-        let avgFixed=newMonths.reduce((s,m)=>s+fixTypes.reduce((ss,t)=>ss+(m.expenses[t]||0),0),0)/newMonths.length;
-        let avgVar=newMonths.reduce((s,m)=>s+varTypes.reduce((ss,t)=>ss+(m.expenses[t]||0),0),0)/newMonths.length;
-        let varRatio=(avgVar+avgIng*0.20)/avgIng;
-        let be=varRatio<1?avgFixed/(1-varRatio):0;
+        // --- CALCULAR GASTOS PROMEDIO ---
         let avgExpenses=newMonths.reduce((s,m)=>s+m.total_expenses,0)/newMonths.length;
-        setStep(stepsDiv,5,'done');progress.style.width='90%';
 
         // --- UPDATE GLOBAL DATA ---
-        setStep(stepsDiv,6,'loading');
-        D={months:newMonths,years:newYears,expense_types:expTypes,expense_detail:newDetail,partners,yoy:D.yoy,avg_expenses:Math.round(avgExpenses*100)/100,breakeven:{avg_fixed:Math.round(avgFixed*100)/100,avg_variable:Math.round(avgVar*100)/100,var_ratio:Math.round(varRatio*10000)/10000,monthly_breakeven:Math.round(be*100)/100,fixed_types:fixTypes,variable_types:varTypes}};
+        setStep(stepsDiv,5,'loading');
+        D={months:newMonths,years:newYears,expense_types:expTypes,expense_detail:newDetail,partners,yoy:D.yoy,avg_expenses:Math.round(avgExpenses*100)/100};
         D.lastUpdateDate='Actualizado: '+new Date().getDate()+'/'+(new Date().getMonth()+1).toString().padStart(2,'0')+'/'+new Date().getFullYear();
         updateDataJSON(D);
 
         // Refresh all panels
         rs();rm();ry();rd();ri();
+        // Reset Period selector
+        let is=document.getElementById('ip');
+        is.innerHTML='<option value="all">Total acumulado</option>';
+        let yrList=[...new Set(D.months.map(m=>m.year))].sort();
+        yrList.forEach(y=>{let o=document.createElement('option');o.value=y;o.text='Año '+y;is.add(o)});
+        D.months.forEach(m=>{let o=document.createElement('option');o.value=m.period;o.text=PL(m.period);is.add(o)});
+
         // Reset YoY selector
         let ys=document.getElementById('yoysel');ys.innerHTML='';
-        let yrList=[...new Set(D.months.map(m=>m.year))].sort();
         for(let i=0;i<yrList.length-1;i++){let o=document.createElement('option');o.value=yrList[i]+'-'+yrList[i+1];o.text=yrList[i]+' vs '+yrList[i+1];ys.add(o)}
         Chart.getChart('chartYoY')?.destroy();yoyChart=null;ryoy();
-        // Destroy and rebuild BE charts
 
         // Update date badge
         let now=new Date();let months2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
         document.getElementById('lastUpdate').textContent='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
 
-        setStep(stepsDiv,6,'done');progress.style.width='100%';
+        setStep(stepsDiv,5,'done');progress.style.width='100%';
 
         let totalIng=D.months.reduce((s,m)=>s+m.ingresos,0);
         let totalUtil=D.months.reduce((s,m)=>s+m.utilidad,0);
@@ -592,7 +576,7 @@ function processExcel(file){
       }catch(err){
         res.className='upload-result error';res.style.display='block';
         msg.innerHTML='<strong style="color:#c62828">Error al procesar el archivo</strong><br><span style="font-size:13px">'+err.message+'</span>';
-        for(let i=0;i<7;i++){let el=document.getElementById('step-'+i);if(el&&el.classList.contains('loading'))el.className='step-icon pending'}
+        for(let i=0;i<6;i++){let el=document.getElementById('step-'+i);if(el&&el.classList.contains('loading'))el.className='step-icon pending'}
       }
       progressWrap.style.display='none';
     };
