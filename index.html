@@ -581,6 +581,8 @@ function processExcel(file){
         // --- UPDATE GLOBAL DATA ---
         setStep(stepsDiv,6,'loading');
         D={months:newMonths,years:newYears,expense_types:expTypes,expense_detail:newDetail,partners,yoy:D.yoy,avg_expenses:Math.round(avgExpenses*100)/100,breakeven:{avg_fixed:Math.round(avgFixed*100)/100,avg_variable:Math.round(avgVar*100)/100,var_ratio:Math.round(varRatio*10000)/10000,monthly_breakeven:Math.round(be*100)/100,fixed_types:fixTypes,variable_types:varTypes}};
+        D.lastUpdateDate='Actualizado: '+new Date().getDate()+'/'+(new Date().getMonth()+1).toString().padStart(2,'0')+'/'+new Date().getFullYear();
+        updateDataJSON(D);
 
         // Refresh all panels
         rs();rm();ry();rd();ri();
