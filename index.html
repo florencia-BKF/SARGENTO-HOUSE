@@ -214,13 +214,20 @@ function updatePeriodDropdown() {
 
 function updateHeaderDates() {
   if(D.months && D.months.length > 0) {
-    let first=D.months[0].period;
-    let last=D.months[D.months.length-1].period;
+    // Ordenar meses para asegurar que el primer y último sean correctos
+    let sortedMonths=[...D.months].sort((a,b)=>a.period.localeCompare(b.period));
+    let first=sortedMonths[0].period;
+    let last=sortedMonths[sortedMonths.length-1].period;
+
     let h2=document.querySelector('h2');
-    if(h2) h2.textContent='Estado de Resultados en USD — '+PL(first)+' a '+PL(last);
+    if(h2) {
+      h2.textContent='Estado de Resultados en USD — '+PL(first)+' a '+PL(last);
+      console.log('[Header] Actualizado: '+PL(first)+' a '+PL(last));
+    }
 
     let now=new Date();
     document.getElementById('lastUpdate').textContent='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+    console.log('[Fecha] Actualizado al: '+now.getDate()+'/'+(now.getMonth()+1)+'/'+now.getFullYear());
   }
 }
 
