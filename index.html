@@ -155,8 +155,6 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:14px;background:#f0f2f5;co
   <div class="chart-container" style="margin-top:20px"><canvas id="chartYoY"></canvas></div>
 </div>
 
-<div class="panel" id="p-be">
-  <div class="section-title">An&aacute;lisis de Punto de Equilibrio (Break-Even)</div>
   <div class="kpi-grid" id="beKpis"></div>
   <div class="charts-grid">
     <div class="chart-container"><canvas id="chartBE"></canvas></div>
@@ -375,7 +373,7 @@ function rbe(){
   let labels=D.months.map(m=>PL(m.period));
   new Chart(document.getElementById('chartBE'),{type:'line',data:{labels,datasets:[
     {label:'Ingresos',data:D.months.map(m=>m.ingresos),borderColor:'#4caf50',backgroundColor:'rgba(76,175,80,.1)',fill:true,tension:.3},
-    {label:'Break-Even',data:D.months.map(()=>b.monthly_breakeven),borderColor:'#ff9800',borderDash:[6,4],pointRadius:0,fill:false},
+    {label:data:D.months.map(()=>b.monthly_breakeven),borderColor:'#ff9800',borderDash:[6,4],pointRadius:0,fill:false},
     {label:'Costos Fijos',data:D.months.map(()=>b.avg_fixed),borderColor:'#ef5350',borderDash:[3,3],pointRadius:0,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Ingresos vs Punto de Equilibrio',font:{size:14}}}}});
 
@@ -592,7 +590,7 @@ function processExcel(file){
         for(let i=0;i<yrList.length-1;i++){let o=document.createElement('option');o.value=yrList[i]+'-'+yrList[i+1];o.text=yrList[i]+' vs '+yrList[i+1];ys.add(o)}
         Chart.getChart('chartYoY')?.destroy();yoyChart=null;ryoy();
         // Destroy and rebuild BE charts
-        Chart.getChart('chartBE')?.destroy();Chart.getChart('chartBE2')?.destroy();rbe();
+        Chart.getChart('chartBE')?.destroy();Chart.getChart('chartBE2')?.destroy();
 
         // Update date badge
         let now=new Date();let months2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -626,7 +624,7 @@ function processExcel(file){
   D.months.forEach(m=>{let o=document.createElement("option");o.value=m.period;o.text=PL(m.period);is.add(o)});
   let ys=document.getElementById('yoysel');
   for(let i=0;i<yrs.length-1;i++){let o=document.createElement('option');o.value=yrs[i]+'-'+yrs[i+1];o.text=yrs[i]+' vs '+yrs[i+1];ys.add(o)}
-  rs();rm();ry();rd();ri();ryoy();rbe();setupUpload();
+  rs();rm();ry();rd();ri();ryoy();setupUpload();
 })();
 </script>
 </body>
