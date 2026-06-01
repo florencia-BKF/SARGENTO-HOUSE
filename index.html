@@ -212,10 +212,23 @@ function updatePeriodDropdown() {
   D.months.forEach(m=>{let o=document.createElement('option');o.value=m.period;o.text=PL(m.period);is.add(o)});
 }
 
+function updateHeaderDates() {
+  if(D.months && D.months.length > 0) {
+    let first=D.months[0].period;
+    let last=D.months[D.months.length-1].period;
+    let h2=document.querySelector('h2');
+    if(h2) h2.textContent='Estado de Resultados en USD — '+PL(first)+' a '+PL(last);
+
+    let now=new Date();
+    document.getElementById('lastUpdate').textContent='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+  }
+}
+
 db.ref('data').once('value').then(snap => {
   if(snap.val()) {
     Object.assign(D, snap.val());
     updatePeriodDropdown();
+    updateHeaderDates();
   }
 });
 
@@ -223,6 +236,7 @@ db.ref('data').on('value', snap => {
   if(snap.val()) {
     Object.assign(D, snap.val());
     updatePeriodDropdown();
+    updateHeaderDates();
     try { rs(); rm(); ry(); rd(); ri(); ryoy(); } catch(e) {}
   }
 });
@@ -575,9 +589,8 @@ function processExcel(file){
         for(let i=0;i<yrList.length-1;i++){let o=document.createElement('option');o.value=yrList[i]+'-'+yrList[i+1];o.text=yrList[i]+' vs '+yrList[i+1];ys.add(o)}
         Chart.getChart('chartYoY')?.destroy();yoyChart=null;ryoy();
 
-        // Update date badge
-        let now=new Date();let months2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-        document.getElementById('lastUpdate').textContent='Actualizado: '+now.getDate()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+        // Update header with new dates and period
+        updateHeaderDates();
 
         setStep(stepsDiv,5,'done');progress.style.width='100%';
 
