@@ -203,13 +203,26 @@ async function updateDataJSON(dataToSave) {
   return false;
 }
 
+function updatePeriodDropdown() {
+  let is=document.getElementById('ip');
+  if(!is) return;
+  is.innerHTML='<option value="all">Total acumulado</option>';
+  let yrList=[...new Set(D.months.map(m=>m.year))].sort();
+  yrList.forEach(y=>{let o=document.createElement('option');o.value=y;o.text='Año '+y;is.add(o)});
+  D.months.forEach(m=>{let o=document.createElement('option');o.value=m.period;o.text=PL(m.period);is.add(o)});
+}
+
 db.ref('data').once('value').then(snap => {
-  if(snap.val()) Object.assign(D, snap.val());
+  if(snap.val()) {
+    Object.assign(D, snap.val());
+    updatePeriodDropdown();
+  }
 });
 
 db.ref('data').on('value', snap => {
   if(snap.val()) {
     Object.assign(D, snap.val());
+    updatePeriodDropdown();
     try { rs(); rm(); ry(); rd(); ri(); ryoy(); } catch(e) {}
   }
 });
